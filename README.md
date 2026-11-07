@@ -12,12 +12,12 @@ npm ci --ignore-scripts
 pi install .
 ```
 
-Run `/reload`, then `/quote` in fullscreen Pi while the agent is idle.
+Run `/reload`, then `/quote` in fullscreen Pi, including while the agent is working or compacting.
 The regular transcript stays mounted: there is no replacement transcript or overlay.
 
 ## Agent message selection
 
-The latest completed agent text message starts highlighted.
+The latest completed agent text message starts highlighted. Streaming messages are excluded. Newly completed messages become available when tool execution starts or the turn ends, without changing your current selection or scroll position.
 
 - `h`, `k`, Left, Up: previous agent message.
 - `l`, `j`, Right, Down: next agent message.
@@ -53,7 +53,7 @@ Block is the shared top-level unit, so navigation does not skip lists between pr
 
 For example: `/quote`, Enter, Tab to choose a level, `h`/`l` to navigate units in source order or `j`/`k` to move vertically, Shift+Tab to expand, Enter to quote. To quote a whole agent message, expand with Shift+Tab until the whole message is selected, then press Enter.
 
-Existing editor text is preserved and the quote is appended after it. Thinking and tool results are not quoted. Original render methods are restored on exit, session changes, and shutdown.
+Existing editor text is preserved and the quote is appended after it. Thinking and tool results are not quoted. Original render methods are restored on exit, successful compaction, session changes, and shutdown. Selection remains available during compaction, but closes when compaction succeeds and Pi rebuilds the transcript. Failed or cancelled compaction does not close selection. Quotes only fill the editor; use Pi's normal controls to send or queue your reply.
 
 ## Planned features
 

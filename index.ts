@@ -57,17 +57,20 @@ export function rowOf(root: Node, target: Node, width: number): number | undefin
 
 export default function quoteExtension(pi: ExtensionAPI) {
   let close: (() => void) | undefined;
+  let refresh: (() => void) | undefined;
   pi.on("session_shutdown", () => close?.());
   pi.on("session_before_switch", () => close?.());
   pi.on("session_before_tree", () => close?.());
-  pi.on("agent_start", () => close?.());
+  pi.on("session_compact", () => close?.());
+  // These events follow the UI's message_end update; extension message_end runs before it.
+  pi.on("tool_execution_start", () => refresh?.());
+  pi.on("turn_end", () => refresh?.());
 
   pi.registerCommand("quote", {
     description: "Copy last agent message to editor for a quote reply",
     handler: async (args, ctx) => {
       if (args.trim()) { ctx.ui.notify("Use /quote, then h/j/k/l or arrows to choose an agent message.", "info"); return; }
       if (ctx.mode !== "tui") { ctx.ui.notify("/quote requires fullscreen interactive Pi.", "error"); return; }
-      if (!ctx.isIdle()) { ctx.ui.notify("Wait for the current agent message to finish before using /quote.", "info"); return; }
       close?.();
       let host!: TUI;
       let targets: Target[] = [];
@@ -148,6 +151,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
       function finish(confirmed = false) {
         if (!active) return;
         active = false;
+        refresh = undefined;
         unsubscribe?.();
         unpaint();
         ctx.ui.setWidget(hintKey, undefined);
@@ -158,6 +162,18 @@ export default function quoteExtension(pi: ExtensionAPI) {
         close = undefined;
       }
       close = () => finish();
+      refresh = () => {
+        const selected = targets[index];
+        const existing = new Map(targets.map(target => [target.component, target]));
+        const updated = agentMessageTargets(document).map(target => existing.get(target.component) ?? target);
+        const nextIndex = updated.indexOf(selected);
+        if (nextIndex < 0) { finish(); return; }
+        if (updated.length === targets.length && updated.every((target, i) => target === targets[i])) return;
+        targets = updated;
+        index = nextIndex;
+        // Keep selection, block objects, render wrappers, and viewport untouched.
+        tui.requestRender();
+      };
       function ensureLayouts() {
         if (layoutColumns !== tui.terminal.columns || layouts.size !== targets[index].blocks.length) {
           tui.renderNow();

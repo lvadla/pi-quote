@@ -60,7 +60,7 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
 });
 
 for (const event of [
-  "agent_start",
+  "session_compact",
   "session_before_switch",
   "session_before_tree",
   "session_shutdown",
