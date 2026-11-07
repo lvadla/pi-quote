@@ -1,81 +1,41 @@
 # pi-quote
 
-Quote agent messages or selected Markdown directly from Pi's existing fullscreen transcript.
+Quote agent messages or selected Markdown directly from Pi's fullscreen transcript into the editor. Nothing is sent automatically.
 
-## Install from a local checkout
+## Install
 
 ```sh
-cd /path/to/pi-quote
-npm ci --ignore-scripts
-pi install .
+pi install git:github.com/lvadla/pi-quote
 ```
 
-Run `/reload`, then `/quote` in fullscreen Pi, including while the agent is working or compacting.
-The regular transcript stays mounted: there is no replacement transcript or overlay.
+Run `/reload` in Pi after installing. Requires fullscreen mode.
 
-## Agent message selection
+## Usage
 
-The latest completed agent text message starts highlighted. Streaming messages are excluded. Newly completed messages become available when tool execution starts or the turn ends, without changing your current selection or scroll position.
+Run `/quote`, choose a message with the arrow keys or `h/j/k/l`, and press Enter. Use Tab to shrink the selection, Shift+Tab to expand it, and Enter to insert the quote. Escape goes back or cancels.
 
-- `h`, `k`, Left, Up: previous agent message.
-- `l`, `j`, Right, Down: next agent message.
-- Enter: confirm the agent message and enter text selection, with its first block selected.
-- Escape or Ctrl+C: cancel.
+Works while the agent is running. Newly completed messages become selectable without reopening `/quote`. Write your reply below the quote and use Pi's normal controls to send or queue it.
 
-## Text selection
-
-- `h`, Left: previous unit at the current level.
-- `l`, Right: next unit at the current level.
-- `k`, Up: nearest unit above at the current level.
-- `j`, Down: nearest unit below at the current level.
-
-Up/down follow rendered lines, including soft wrapping, and remember the horizontal column across repeated moves. Short lines do not reset that column. Left/right or changing levels resets it. If no other unit exists in the requested vertical direction, selection stays put; up/down never fall back to previous/next on the same line.
-- Shift+Tab: expand the level, such as word → sentence → block → whole agent message.
-- Tab: shrink the level. Shrink reverses the most recent expansion.
-
-Navigation never changes the level. At Block level, left/right select the previous/next top-level paragraph, heading, list, code block, blockquote, or table in source order. Shrinking a paragraph selects a sentence; shrinking a list selects a list item; shrinking a code block selects a code line. At Sentence level, movement selects another sentence. Left/right stop at the first/last unit; up/down stop when there is no other unit above/below. With the whole agent message selected, navigation stays on that single unit until you shrink the level. A one-sentence paragraph still has distinct Sentence and Block levels even though they highlight the same text.
-
-Word level includes visible symbols and punctuation as separate units, including arrows, slashes, emoji, and code operators. Whitespace and Markdown formatting delimiters are excluded; literal punctuation inside code remains selectable.
-
-Alt+i/o and w/b are not assigned. Only Tab and Shift+Tab change the level.
-
-- Enter: insert only the selected source Markdown as `> ` quoted lines, with the cursor on a blank line below. Never sends automatically.
-- Escape: return to agent message selection; Escape again cancels.
-- Ctrl+C: cancel directly.
-
-Scrolling is handled by Pi's native fullscreen TUI, including its configured keyboard bindings and mouse wheel. The quote extension does not implement or advertise separate scrolling controls. Hints above the input editor show the current mode, selection kind, and controls. The title stays visible in both modes. In text selection, Tab/Shift+Tab hints sit beside the unit indicator, or on their own line when space is limited. Enter/Escape hints stay together, following navigation when they fit or moving to the next line. The selected range uses reverse video. Inside the selection, an underline marks the anchor without interrupting the inverted highlight.
-
-The shared heading is **Quote agent message in editor**. In agent message selection, only **40/44** follows the heading, without repeating "agent message". In text selection, it shows the current unit and its position among units of that kind within the chosen agent message: **Word 8/120**, **Sentence 2/9**, **Block 3/7**, etc. Selecting the whole agent message shows **Whole agent message 1/1**. Counts follow source order and update on movement, expansion, and shrinking; overlapping units of different kinds are counted independently. Tables remain atomic, so their contents are not separate selectable words or sentences. On narrow terminals the title stays visible and the hints wrap onto additional lines.
-
-Block is the shared top-level unit, so navigation does not skip lists between prose paragraphs. Finer selection units include words, sentences, inline formatting, list items, nested lists, paragraphs inside blockquotes, and code lines. Sections group blocks beneath headings. Code selection uses Markdown structure and words, not a language-specific code AST. Tables are atomic (whole-table selection only).
-
-For example: `/quote`, Enter, Tab to choose a level, `h`/`l` to navigate units in source order or `j`/`k` to move vertically, Shift+Tab to expand, Enter to quote. To quote a whole agent message, expand with Shift+Tab until the whole message is selected, then press Enter.
-
-Existing editor text is preserved and the quote is appended after it. Thinking and tool results are not quoted. Original render methods are restored on exit, successful compaction, session changes, and shutdown. Selection remains available during compaction, but closes when compaction succeeds and Pi rebuilds the transcript. Failed or cancelled compaction does not close selection. Quotes only fill the editor; use Pi's normal controls to send or queue your reply.
+See [controls and selection behavior](docs/usage.md) and [compatibility and implementation](docs/implementation.md).
 
 ## Planned features
 
-1. **Multi-word selection (under consideration).** At word level, hold Shift and use Left/Right or H/L to extend the selection across words. Reversing direction would shrink it toward the starting word, then extend on the other side. Revisit after more hands-on use; not yet committed for implementation.
-
-## Compatibility and implementation
-
-Requires Pi's fullscreen interface. Tested with Pi 1.5.0; this is a tested version, not an exact-version requirement. No Pi installation files are changed. The extension uses public TUI scrolling and input APIs, but its guarded adapter reads internal `AssistantMessageComponent` metadata (`lastMessage`, `isStreaming`, `markdownSlots`) and assumes the mounted document is the first TUI child. Pi changes may require updating this adapter.
-
-`marked` provides Markdown structure; `diff` maps surviving source characters onto Pi's existing rendered lines, ignoring whitespace so wrapping and padding do not shift source offsets. The mapping is cached by rendered output and width. Highlighting preserves the renderer's foreground colors and links. Source slices, not text reconstructed from the terminal, are quoted. Display-only transformations such as rendered math can make some subranges unavailable; invisible ranges are rejected rather than silently quoted. Partial source selections can include partial Markdown syntax.
-
-Navigation updates selection state immediately and coalesces painting to the latest state once per frame. Key release flushes the final pending frame; confirmation and cancellation clear it. Unit lists, highlighted output, and vertical navigation geometry are cached, so repeated word navigation does not sort units or measure earlier transcript content for every key event. Vertical geometry is rebuilt when the selected level or rendered layout changes.
+- **Multi-word selection (under consideration):** hold Shift with Left/Right or H/L to extend a word selection across a phrase.
 
 ## Development
 
-From a fresh checkout, with Node >=22.19.0:
+With Node >=22.19.0:
 
 ```sh
+git clone https://github.com/lvadla/pi-quote.git
+cd pi-quote
 npm ci --ignore-scripts
 npm run check
+pi install .
 ```
 
-`npm run typecheck` checks types; `npm test` runs the tests. Development dependencies are pinned for reproducible checks, not to restrict the installed Pi version.
+`npm run typecheck` checks types; `npm test` runs the tests.
 
 ## License
 
-[MIT](LICENSE) © 2026 Lance Vadla.
+[MIT](LICENSE) - Copyright 2026 Lance Vadla.

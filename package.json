@@ -19,7 +19,9 @@
     "index.ts",
     "rendering.ts",
     "selection.ts",
-    "README.md"
+    "README.md",
+    "docs/usage.md",
+    "docs/implementation.md"
   ],
   "engines": {
     "node": ">=22.19.0"
