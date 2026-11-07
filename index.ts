@@ -1,7 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isKeyRelease, matchesKey, TuiAltScreen, sliceByColumn, truncateToWidth, visibleWidth, wrapTextWithAnsi,
+import { isKeyRelease, matchesKey, TuiAltScreen, truncateToWidth, visibleWidth, wrapTextWithAnsi,
   type Component, type TUI } from "@earendil-works/pi-tui";
 import { indexUnitRows, renderedCells, SmartSelection, verticalUnit, type Cell, type Range, type UnitRows } from "./selection.ts";
+
+import { highlightLine, quoteText } from "./rendering.ts";
+export { highlightLine, quoteText } from "./rendering.ts";
 
 // Pi 1.5 adapter: these agent message metadata fields are internal. No session data,
 // transcript nodes, or mouse-selection state are replaced or modified.
@@ -50,35 +53,6 @@ export function rowOf(root: Node, target: Node, width: number): number | undefin
     return undefined;
   }
   return preceding(root)?.reduce((row, node) => row + node.render(width).length, 0);
-}
-
-export function quoteText(text: string): string {
-  return text.replace(/\r\n/g, "\n").split("\n").map(line => `> ${line}`).join("\n") + "\n\n";
-}
-
-function invert(text: string) {
-  return "\x1b[7m" + text.replace(/\x1b\[[0-9;:]*m/g, sequence => sequence + "\x1b[7m") + "\x1b[27m";
-}
-
-// Slice existing ANSI-rendered lines; keep foreground colors, links and wrapping.
-export function highlightLine(line: string, width: number, span: [number, number] | undefined,
-  cursor: [number, number] | undefined): string {
-  if (!span && !cursor) return line;
-  line += " ".repeat(Math.max(0, width - visibleWidth(line)));
-  const boundaries = [...new Set([0, width, ...(span ?? []), ...(cursor ?? [])])].sort((a, b) => a - b);
-  let output = "";
-  for (let i = 0; i < boundaries.length - 1; i++) {
-    const start = boundaries[i], end = boundaries[i + 1];
-    if (end <= start) continue;
-    let part = sliceByColumn(line, start, end - start);
-    const selected = span && start >= span[0] && end <= span[1];
-    const atCursor = cursor && start >= cursor[0] && end <= cursor[1];
-    if (selected && atCursor) {
-      part = invert("\x1b[4m" + part.replace(/\x1b\[[0-9;:]*m/g, sequence => sequence + "\x1b[4m") + "\x1b[24m");
-    } else if (selected || atCursor) part = invert(part);
-    output += part;
-  }
-  return output;
 }
 
 export default function quoteExtension(pi: ExtensionAPI) {

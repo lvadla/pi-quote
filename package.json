@@ -24,6 +24,7 @@
   ],
   "files": [
     "index.ts",
+    "rendering.ts",
     "selection.ts",
     "README.md"
   ],
