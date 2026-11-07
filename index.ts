@@ -100,15 +100,20 @@ export default function quoteExtension(pi: ExtensionAPI) {
             const hint = (keys: string, action: string) =>
               `${ctx.ui.theme.fg("muted", keys)} ${ctx.ui.theme.fg("text", action)}`;
             const separator = ctx.ui.theme.fg("muted", " · ");
-            const navigation = mode === "message"
-              ? [hint("h←", "Previous"), hint("j↓", "Next"), hint("k↑", "Previous"), hint("l→", "Next")].join(separator)
-              : [hint("h←", "Previous"), hint("j↓", "Down"), hint("k↑", "Up"), hint("l→", "Next")].join(separator);
-            const hints = mode === "message"
-              ? [navigation, [hint("Enter", "Continue"), hint("Esc", "Cancel")].join(separator)]
-              : [[navigation, hint("Tab", "Shrink level"), hint("Shift+Tab", "Expand level")].join(separator),
-                [hint("Enter", "Quote"), hint("Esc", "Cancel")].join(separator)];
-            return [visibleWidth(title) <= width ? title : truncateToWidth(ctx.ui.theme.fg("muted", status), width),
-              ...hints.flatMap(line => wrapTextWithAnsi(line, Math.max(1, width)))];
+            const navigation = [hint("h←", "Previous"), hint("j↓", "Down"), hint("k↑", "Up"), hint("l→", "Next")].join(separator);
+            const levelHints = mode === "text"
+              ? [hint("Tab", "Shrink level"), hint("Shift+Tab", "Expand level")].join(separator) : "";
+            const heading = levelHints ? title + separator + levelHints : title;
+            const headingLines = visibleWidth(heading) <= width ? [heading]
+              : [...wrapTextWithAnsi(title, Math.max(1, width)),
+                ...(levelHints ? wrapTextWithAnsi(levelHints, Math.max(1, width)) : [])];
+            const movement = navigation;
+            const actions = [hint("Enter", mode === "message" ? "Continue" : "Quote"), hint("Esc", "Cancel")].join(separator);
+            const combined = movement + separator + actions;
+            const hints = visibleWidth(combined) <= width ? [combined]
+              : [...wrapTextWithAnsi(movement, Math.max(1, width)), truncateToWidth(actions, Math.max(1, width))];
+            return [...headingLines,
+              ...hints];
           },
           invalidate() {},
         };

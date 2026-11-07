@@ -16,7 +16,7 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
   h.editor.setText("draft");
   await open();
   assert.ok(status().includes("3/3"), "streaming and failed messages excluded");
-  assert.ok(status().includes("h← Previous · j↓ Next · k↑ Previous · l→ Next"));
+  assert.ok(status().includes("h← Previous · j↓ Down · k↑ Up · l→ Next"));
   h.input("\x1b[107;1:1u");
   assert.ok(status().includes("2/3"));
   h.input("\x1b[107;1:3u");
