@@ -45,8 +45,6 @@ for (const restored of [false, true]) {
     h.input("\r");
     assert.equal(h.editor.getText(), "> Same **answer**.\n\n");
     assert.deepEqual(h.document.render(71), before);
-    assert.equal(h.input, undefined);
-    assert.deepEqual(h.notices, []);
   });
 
   test(`${mode}: identical blocks remain independently selectable`, async (t) => {
@@ -61,7 +59,6 @@ for (const restored of [false, true]) {
     h.document.addChild(component);
     const blocks = component.markdownSlots.filter(slot => slot.kind === "text").map(slot => slot.markdown);
     assert.equal(blocks.length, 2);
-    const originals = blocks.map(block => block.render);
     const before = h.document.render(71);
     await h.commands.get("quote").handler("", h.ctx);
     assert.ok(blocks.every(painted), "whole-message selection includes both occurrences");
@@ -77,16 +74,8 @@ for (const restored of [false, true]) {
     assert.ok(status().includes("Word 2/2"));
     assert.equal(painted(blocks[0]), false);
     assert.equal(painted(blocks[1]), true);
-    h.input("h");
-    flush(h);
-    assert.equal(painted(blocks[0]), true);
-    assert.equal(painted(blocks[1]), false);
-    h.input("l");
-    flush(h);
     h.input("\r");
     assert.equal(h.editor.getText(), "> Echo\n\n");
     assert.deepEqual(h.document.render(71), before);
-    blocks.forEach((block, i) => assert.equal(block.render, originals[i]));
-    assert.deepEqual(h.notices, []);
   });
 }

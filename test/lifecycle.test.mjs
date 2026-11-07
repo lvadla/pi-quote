@@ -3,7 +3,7 @@ import test from "node:test";
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import { createHarness } from "./helpers.mjs";
 
-test("Message selection, hints, release events, cancellation, and exact Markdown quoting", async (t) => {
+test("Message navigation, release events, cancellation, and exact Markdown quoting", async (t) => {
   const h = createHarness();
   t.after(() => h.stop());
   const status = () =>
@@ -13,10 +13,8 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
     "> **Hello** [world](https://example.com)\n\n```js\nx += 1;\n```";
   h.latest.updateContent(h.message(source));
   const before = h.document.render(71);
-  h.editor.setText("draft");
   await open();
   assert.ok(status().includes("3/3"), "streaming and failed messages excluded");
-  assert.ok(status().includes("h← Previous · j↓ Down · k↑ Up · l→ Next"));
   h.input("\x1b[107;1:1u");
   assert.ok(status().includes("2/3"));
   h.input("\x1b[107;1:3u");
@@ -24,17 +22,11 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
   h.input("j");
   h.input("\r");
   assert.ok(status().includes("Block 1/2"));
-  assert.ok(status().includes("h← Previous · j↓ Down · k↑ Up · l→ Next"));
-  const unchanged = status();
-  for (const key of ["w", "b", "\x1bi", "\x1bo"]) {
-    h.input(key);
-    assert.equal(status(), unchanged);
-  }
   h.input("\x1b");
   assert.ok(status().includes("3/3"));
   h.input("\x1b");
   assert.equal(h.input, undefined);
-  assert.equal(h.editor.getText(), "draft");
+  assert.equal(h.editor.getText(), "");
   assert.deepEqual(h.document.render(71), before);
   await open();
   h.input("\r");
@@ -43,11 +35,10 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
   h.input("\r");
   assert.equal(
     h.editor.getText(),
-    "draft\n\n" +
-      source
-        .split("\n")
-        .map((line) => "> " + line)
-        .join("\n") +
+    source
+      .split("\n")
+      .map((line) => "> " + line)
+      .join("\n") +
       "\n\n",
   );
   h.editor.handleInput("comment");

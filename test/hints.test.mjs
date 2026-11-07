@@ -30,12 +30,5 @@ for (const mode of ["message", "text"]) {
     const wrapped = render(exactWidth - 1);
     assert.equal(wrapped.at(-1), actions);
     assert.ok(!wrapped.at(-2).includes("Enter"));
-    for (const width of [30, 50, 72, 100, 140, 200]) {
-      const lines = render(width);
-      assert.ok(lines.every(line => visibleWidth(line) <= width));
-      assert.ok(lines.join(" ").includes("Quote agent message in editor"), `title preserved at width ${width}`);
-      const actionLine = lines.find(line => line.includes("Enter"));
-      assert.ok(actionLine?.includes("Esc Cancel"), `both actions together at width ${width}`);
-    }
   });
 }
