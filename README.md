@@ -78,6 +78,7 @@ npm run check
 - `test/symbols.test.mjs`: symbol/Unicode reachability, formatting exclusions, and exact source quoting.
 - `test/spatial.test.mjs`: actual Pi fullscreen rendering, vertical movement, column memory, wrapping, resize, and repeat/release coalescing.
 - `test/lifecycle.test.mjs`: message filtering, hints, cancellation, quote insertion, cursor placement, and session cleanup.
+- `test/identity.test.mjs`: duplicate messages and blocks in live-completed and restored messages.
 - `test/helpers.mjs`: shared in-memory terminal and real Pi component setup. No live terminal or model calls.
 
 Repeat tests assert that key bursts do not force per-key renders or scan earlier messages. Timing is diagnostic, not a machine-dependent pass/fail threshold. Test files and development configuration are kept out of the published package via the `files` allowlist.
