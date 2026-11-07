@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isKeyRelease, matchesKey, sliceByColumn, truncateToWidth, visibleWidth, wrapTextWithAnsi,
+import { isKeyRelease, matchesKey, TuiAltScreen, sliceByColumn, truncateToWidth, visibleWidth, wrapTextWithAnsi,
   type Component, type TUI } from "@earendil-works/pi-tui";
 import { indexUnitRows, renderedCells, SmartSelection, verticalUnit, type Cell, type Range, type UnitRows } from "./selection.ts";
 
@@ -7,8 +7,6 @@ import { indexUnitRows, renderedCells, SmartSelection, verticalUnit, type Cell, 
 // transcript nodes, or mouse-selection state are replaced or modified.
 type Node = Component & { children?: Node[]; lastMessage?: any; isStreaming?: boolean;
   markdownSlots?: { kind: string; markdown: Node }[] };
-type Viewport = TUI & { viewportTop: number; isFollowingOutput: boolean;
-  scrollBy(lines: number): void; scrollToBottom(): void };
 type Block = { component: Node; source: string; start: number; end: number };
 type Target = { component: Node; text: string; blocks: Block[] };
 type Layout = { width: number; lines: string[]; cells: Cell[] };
@@ -97,7 +95,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
       if (ctx.mode !== "tui") { ctx.ui.notify("/quote requires fullscreen interactive Pi.", "error"); return; }
       if (!ctx.isIdle()) { ctx.ui.notify("Wait for the current agent message to finish before using /quote.", "info"); return; }
       close?.();
-      let tui!: Viewport;
+      let host!: TUI;
       let targets: Target[] = [];
       let index = 0;
       let mode: "message" | "text" = "message";
@@ -113,7 +111,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
       const draft = ctx.ui.getEditorText();
       const hintKey = "quote:controls";
       ctx.ui.setWidget(hintKey, instance => {
-        tui = instance as Viewport;
+        host = instance;
         return {
           render: width => {
             const position = mode === "message"
@@ -141,11 +139,12 @@ export default function quoteExtension(pi: ExtensionAPI) {
           invalidate() {},
         };
       });
-      if (tui.mode !== "fullscreen" || typeof tui.scrollBy !== "function") {
+      if (!(host instanceof TuiAltScreen)) {
         ctx.ui.setWidget(hintKey, undefined);
         ctx.ui.notify("/quote requires Pi fullscreen mode. Change it in /settings.", "error");
         return;
       }
+      const tui = host;
       const document = tui.children[0] as Node;
       targets = document ? agentMessageTargets(document) : [];
       if (!targets.length) {
