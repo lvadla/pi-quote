@@ -21,7 +21,7 @@ The latest completed agent text message starts highlighted.
 
 - `h`, `k`, Left, Up: previous agent message.
 - `l`, `j`, Right, Down: next agent message.
-- Enter: confirm the agent message and enter text selection, with the whole agent message selected.
+- Enter: confirm the agent message and enter text selection, with its first block selected.
 - Escape or Ctrl+C: cancel.
 
 ## Text selection
@@ -51,7 +51,7 @@ The shared heading is **Quote agent message in editor**. In agent message select
 
 Block is the shared top-level unit, so navigation does not skip lists between prose paragraphs. Finer selection units include words, sentences, inline formatting, list items, nested lists, paragraphs inside blockquotes, and code lines. Sections group blocks beneath headings. Code selection uses Markdown structure and words, not a language-specific code AST. Tables are atomic (whole-table selection only).
 
-For example: `/quote`, Enter, Tab to choose a level, `h`/`l` to navigate units in source order or `j`/`k` to move vertically, Shift+Tab to expand, Enter to quote. To quote a whole agent message, press Enter twice after choosing it.
+For example: `/quote`, Enter, Tab to choose a level, `h`/`l` to navigate units in source order or `j`/`k` to move vertically, Shift+Tab to expand, Enter to quote. To quote a whole agent message, expand with Shift+Tab until the whole message is selected, then press Enter.
 
 Existing editor text is preserved and the quote is appended after it. Thinking and tool results are not quoted. Original render methods are restored on exit, session changes, and shutdown.
 

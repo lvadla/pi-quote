@@ -33,7 +33,7 @@ test("Spatial navigation, wrapping, repeat coalescing, resize, and cleanup", asy
   await commands.get("quote").handler("", ctx);
   send("\r");
   send("j");
-  assert.ok(status().includes("Whole agent message 1/1"));
+  assert.ok(status().includes("Block 1/1"));
   for (let i = 0; i < 6 && !status().includes("Word "); i++) send("\t");
   assert.ok(status().includes("Word 1/9"));
   send("k");
@@ -72,7 +72,6 @@ test("Spatial navigation, wrapping, repeat coalescing, resize, and cleanup", asy
   );
   await commands.get("quote").handler("", ctx);
   send("\r");
-  send("\t");
   send("\t");
   assert.ok(status().includes("Sentence 1/4"));
   send("j");

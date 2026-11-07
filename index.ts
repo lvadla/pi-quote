@@ -292,7 +292,16 @@ export default function quoteExtension(pi: ExtensionAPI) {
             if (mode === "message") finish();
             else { cancelReveal(); goalColumn = undefined; mode = "message"; selection.reset(); reveal(true); }
           } else if (key("enter")) {
-            if (mode === "message") { mode = "text"; reveal(); }
+            if (mode === "message") {
+              mode = "text";
+              const firstBlock = selection.ranges.find(range => range.kind === "block");
+              if (firstBlock) {
+                selection.current = firstBlock;
+                selection.anchor = selection.ranges.find(range => range.kind === "word"
+                  && range.start >= firstBlock.start && range.end <= firstBlock.end)?.start ?? firstBlock.start;
+              }
+              reveal();
+            }
             else finish(true);
           } else if (mode === "message" && (left || up || right || down)) {
             index = Math.max(0, Math.min(targets.length - 1, index + (left || up ? -1 : 1)));

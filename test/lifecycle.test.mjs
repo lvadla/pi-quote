@@ -23,7 +23,7 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
   assert.ok(status().includes("2/3"), "release must not navigate again");
   h.input("j");
   h.input("\r");
-  assert.ok(status().includes("Whole agent message 1/1"));
+  assert.ok(status().includes("Block 1/2"));
   assert.ok(status().includes("h← Previous · j↓ Down · k↑ Up · l→ Next"));
   const unchanged = status();
   for (const key of ["w", "b", "\x1bi", "\x1bo"]) {
@@ -38,6 +38,8 @@ test("Message selection, hints, release events, cancellation, and exact Markdown
   assert.deepEqual(h.document.render(71), before);
   await open();
   h.input("\r");
+  h.input("\x1b[Z"); // expand to the whole message
+  assert.ok(status().includes("Whole agent message 1/1"));
   h.input("\r");
   assert.equal(
     h.editor.getText(),
@@ -77,3 +79,34 @@ for (const event of [
     assert.deepEqual(h.document.render(71), before);
   });
 }
+
+test("Entering text selection narrows to the first block, including after returning to message mode", async (t) => {
+  const h = createHarness();
+  t.after(() => h.stop());
+  h.latest.updateContent(h.message("First paragraph.\n\nSecond paragraph."));
+  const before = h.document.render(71);
+  const lines = () => h.latest.render(71);
+  const highlighted = (text) => lines().some(line =>
+    stripTerminalSequences(line).includes(text) && line.includes("\x1b[7m"));
+  const status = () => h.widgets.render(140).map(stripTerminalSequences).join("\n");
+  await h.commands.get("quote").handler("", h.ctx);
+  assert.ok(highlighted("First paragraph."));
+  assert.ok(highlighted("Second paragraph."));
+  h.input("\r");
+  assert.ok(status().includes("Block 1/2"));
+  assert.ok(highlighted("First paragraph."));
+  assert.equal(highlighted("Second paragraph."), false);
+  h.input("l");
+  h.input("\x1b[108;1:3u");
+  assert.ok(status().includes("Block 2/2"));
+  h.input("\x1b");
+  assert.ok(highlighted("First paragraph."));
+  assert.ok(highlighted("Second paragraph."));
+  h.input("\r");
+  assert.ok(status().includes("Block 1/2"));
+  assert.equal(highlighted("Second paragraph."), false);
+  h.input("\r");
+  assert.equal(h.editor.getText(), "> First paragraph.\n\n");
+  assert.deepEqual(h.document.render(71), before);
+  assert.deepEqual(h.notices, []);
+});
