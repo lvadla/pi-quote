@@ -29,8 +29,7 @@ With Node >=22.19.0:
 ```sh
 git clone https://github.com/lvadla/pi-quote.git
 cd pi-quote
-npm ci --ignore-scripts
-npm run check
+npm install
 pi install .
 ```
 
