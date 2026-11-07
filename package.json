@@ -1,0 +1,44 @@
+{
+  "name": "pi-quote",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "diff": "8.0.4",
+    "marked": "18.0.11"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "version": "0.1.0",
+  "description": "Quote agent messages and structurally selected Markdown from Pi\u2019s existing transcript.",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "quote",
+    "markdown"
+  ],
+  "files": [
+    "index.ts",
+    "selection.ts",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.5.0",
+    "@earendil-works/pi-tui": "1.5.0",
+    "jiti": "2.7.0",
+    "typescript": "6.0.3"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm test"
+  }
+}

@@ -1,0 +1,79 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { stripTerminalSequences } from "@earendil-works/pi-tui";
+import { createHarness } from "./helpers.mjs";
+
+test("Message selection, hints, release events, cancellation, and exact Markdown quoting", async (t) => {
+  const h = createHarness();
+  t.after(() => h.stop());
+  const status = () =>
+    h.widgets.render(140).map(stripTerminalSequences).join("\n");
+  const open = () => h.commands.get("quote").handler("", h.ctx);
+  const source =
+    "> **Hello** [world](https://example.com)\n\n```js\nx += 1;\n```";
+  h.latest.updateContent(h.message(source));
+  const before = h.document.render(71);
+  h.editor.setText("draft");
+  await open();
+  assert.ok(status().includes("3/3"), "streaming and failed messages excluded");
+  assert.ok(status().includes("h← Previous · j↓ Next · k↑ Previous · l→ Next"));
+  h.input("\x1b[107;1:1u");
+  assert.ok(status().includes("2/3"));
+  h.input("\x1b[107;1:3u");
+  assert.ok(status().includes("2/3"), "release must not navigate again");
+  h.input("j");
+  h.input("\r");
+  assert.ok(status().includes("Whole agent message 1/1"));
+  assert.ok(status().includes("h← Previous · j↓ Down · k↑ Up · l→ Next"));
+  const unchanged = status();
+  for (const key of ["w", "b", "\x1bi", "\x1bo"]) {
+    h.input(key);
+    assert.equal(status(), unchanged);
+  }
+  h.input("\x1b");
+  assert.ok(status().includes("3/3"));
+  h.input("\x1b");
+  assert.equal(h.input, undefined);
+  assert.equal(h.editor.getText(), "draft");
+  assert.deepEqual(h.document.render(71), before);
+  await open();
+  h.input("\r");
+  h.input("\r");
+  assert.equal(
+    h.editor.getText(),
+    "draft\n\n" +
+      source
+        .split("\n")
+        .map((line) => "> " + line)
+        .join("\n") +
+      "\n\n",
+  );
+  h.editor.handleInput("comment");
+  assert.ok(
+    h.editor.getText().endsWith("\n\ncomment"),
+    "cursor below the quote",
+  );
+  assert.deepEqual(h.document.render(71), before);
+  assert.equal(h.notices.length, 0);
+});
+
+for (const event of [
+  "agent_start",
+  "session_before_switch",
+  "session_before_tree",
+  "session_shutdown",
+]) {
+  test(`${event} restores rendering and removes input handlers`, async (t) => {
+    const h = createHarness();
+    t.after(() => h.stop());
+    const before = h.document.render(71);
+    await h.commands.get("quote").handler("", h.ctx);
+    h.input("\r");
+    h.input("\t"); // queue a selection frame
+    h.events.get(event)();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(h.input, undefined);
+    assert.equal(h.widgets.children.length, 0);
+    assert.deepEqual(h.document.render(71), before);
+  });
+}
