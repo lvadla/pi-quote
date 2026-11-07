@@ -2,8 +2,6 @@
 
 Quote agent messages or selected Markdown directly from Pi's existing fullscreen transcript.
 
-**Development prototype:** the current transcript adapter uses private Pi metadata and temporarily wraps render methods. Publication is on hold pending a supported integration. The repository's `docs/transcript-api-review.md` records the API audit, runtime findings, and a draft upstream request.
-
 ## Install from a local checkout
 
 ```sh
@@ -47,7 +45,7 @@ Alt+i/o and w/b are not assigned. Only Tab and Shift+Tab change the level.
 
 Scrolling is handled by Pi's native fullscreen TUI, including its configured keyboard bindings and mouse wheel. The quote extension does not implement or advertise separate scrolling controls. Hints above the input editor show the current mode, selection kind, and controls. The title stays visible in both modes. In text selection, Tab/Shift+Tab hints sit beside the unit indicator, or on their own line when space is limited. Enter/Escape hints stay together, following navigation when they fit or moving to the next line. The selected range uses reverse video. Inside the selection, an underline marks the anchor without interrupting the inverted highlight.
 
-The shared heading is **Quote agent message in editor**. In agent message selection, only **40/44** follows the heading, without repeating “agent message”. In text selection, it shows the current unit and its position among units of that kind within the chosen agent message: **Word 8/120**, **Sentence 2/9**, **Block 3/7**, etc. Selecting the whole agent message shows **Whole agent message 1/1**. Counts follow source order and update on movement, expansion, and shrinking; overlapping units of different kinds are counted independently. Tables remain atomic, so their contents are not separate selectable words or sentences. On narrow terminals the unit and counter take priority over the heading.
+The shared heading is **Quote agent message in editor**. In agent message selection, only **40/44** follows the heading, without repeating "agent message". In text selection, it shows the current unit and its position among units of that kind within the chosen agent message: **Word 8/120**, **Sentence 2/9**, **Block 3/7**, etc. Selecting the whole agent message shows **Whole agent message 1/1**. Counts follow source order and update on movement, expansion, and shrinking; overlapping units of different kinds are counted independently. Tables remain atomic, so their contents are not separate selectable words or sentences. On narrow terminals the title stays visible and the hints wrap onto additional lines.
 
 Block is the shared top-level unit, so navigation does not skip lists between prose paragraphs. Finer selection units include words, sentences, inline formatting, list items, nested lists, paragraphs inside blockquotes, and code lines. Sections group blocks beneath headings. Code selection uses Markdown structure and words, not a language-specific code AST. Tables are atomic (whole-table selection only).
 
@@ -61,7 +59,7 @@ Existing editor text is preserved and the quote is appended after it. Thinking a
 
 ## Compatibility and implementation
 
-Tested against Pi 1.5.0's actual fullscreen renderer. No Pi installation files are changed. The extension uses public TUI scrolling and input APIs, but its guarded adapter reads internal `AssistantMessageComponent` metadata (`lastMessage`, `isStreaming`, `markdownSlots`) and assumes the mounted document is the first TUI child. Pi changes may require updating this adapter.
+Requires Pi's fullscreen interface. Tested with Pi 1.5.0; this is a tested version, not an exact-version requirement. No Pi installation files are changed. The extension uses public TUI scrolling and input APIs, but its guarded adapter reads internal `AssistantMessageComponent` metadata (`lastMessage`, `isStreaming`, `markdownSlots`) and assumes the mounted document is the first TUI child. Pi changes may require updating this adapter.
 
 `marked` provides Markdown structure; `diff` maps surviving source characters onto Pi's existing rendered lines, ignoring whitespace so wrapping and padding do not shift source offsets. The mapping is cached by rendered output and width. Highlighting preserves the renderer's foreground colors and links. Source slices, not text reconstructed from the terminal, are quoted. Display-only transformations such as rendered math can make some subranges unavailable; invisible ranges are rejected rather than silently quoted. Partial source selections can include partial Markdown syntax.
 
@@ -76,4 +74,8 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-`npm run typecheck` runs the repository's strict `tsconfig.json`. `npm test` runs the regression suite with Node's built-in test runner. Both use locked local development dependencies, including Pi 1.5.0; neither requires a global Pi installation or files outside this repository.
+`npm run typecheck` checks types; `npm test` runs the tests. Development dependencies are pinned for reproducible checks, not to restrict the installed Pi version.
+
+## License
+
+[MIT](LICENSE) © 2026 Lance Vadla.

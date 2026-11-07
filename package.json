@@ -1,21 +1,14 @@
 {
   "name": "pi-quote",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Quote agent messages and structurally selected Markdown from Pi's existing transcript.",
   "type": "module",
   "pi": {
     "extensions": [
       "./index.ts"
     ]
   },
-  "dependencies": {
-    "diff": "8.0.4",
-    "marked": "18.0.11"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*"
-  },
-  "version": "0.1.0",
-  "description": "Quote agent messages and structurally selected Markdown from Pi\u2019s existing transcript.",
   "keywords": [
     "pi-package",
     "pi",
@@ -31,15 +24,23 @@
   "engines": {
     "node": ">=22.19.0"
   },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "diff": "8.0.4",
+    "marked": "18.0.11"
+  },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "1.5.0",
     "@earendil-works/pi-tui": "1.5.0",
     "jiti": "2.7.0",
     "typescript": "7.0.2"
   },
-  "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test test/*.test.mjs",
-    "check": "npm run typecheck && npm test"
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
   }
 }
