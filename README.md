@@ -55,6 +55,10 @@ For example: `/quote`, Enter, Tab to choose a level, `h`/`l` to navigate units i
 
 Existing editor text is preserved and the quote is appended after it. Thinking and tool results are not quoted. Original render methods are restored on exit, session changes, and shutdown.
 
+## Planned features
+
+1. **Multi-word selection (under consideration).** At word level, hold Shift and use Left/Right or H/L to extend the selection across words. Reversing direction would shrink it toward the starting word, then extend on the other side. Revisit after more hands-on use; not yet committed for implementation.
+
 ## Compatibility and implementation
 
 Tested against Pi 1.5.0's actual fullscreen renderer. No Pi installation files are changed. The extension uses public TUI scrolling and input APIs, but its guarded adapter reads internal `AssistantMessageComponent` metadata (`lastMessage`, `isStreaming`, `markdownSlots`) and assumes the mounted document is the first TUI child. Pi changes may require updating this adapter.
@@ -73,12 +77,3 @@ npm run check
 ```
 
 `npm run typecheck` runs the repository's strict `tsconfig.json`. `npm test` runs the regression suite with Node's built-in test runner. Both use locked local development dependencies, including Pi 1.5.0; neither requires a global Pi installation or files outside this repository.
-
-- `test/selection.test.mjs`: structural levels, counters, nested lists, code, atomic tables, and horizontal boundaries.
-- `test/symbols.test.mjs`: symbol/Unicode reachability, formatting exclusions, and exact source quoting.
-- `test/spatial.test.mjs`: actual Pi fullscreen rendering, vertical movement, column memory, wrapping, resize, and repeat/release coalescing.
-- `test/lifecycle.test.mjs`: message filtering, hints, cancellation, quote insertion, cursor placement, and session cleanup.
-- `test/identity.test.mjs`: duplicate messages and blocks in live-completed and restored messages.
-- `test/helpers.mjs`: shared in-memory terminal and real Pi component setup. No live terminal or model calls.
-
-Repeat tests assert that key bursts do not force per-key renders or scan earlier messages. Timing is diagnostic, not a machine-dependent pass/fail threshold. Test files and development configuration are kept out of the published package via the `files` allowlist.
