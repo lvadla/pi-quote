@@ -91,7 +91,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
   pi.on("agent_start", () => close?.());
 
   pi.registerCommand("quote", {
-    description: "Select an agent message, then structurally select Markdown to quote",
+    description: "Copy last agent message to editor for a quote reply",
     handler: async (args, ctx) => {
       if (args.trim()) { ctx.ui.notify("Use /quote, then h/j/k/l or arrows to choose an agent message.", "info"); return; }
       if (ctx.mode !== "tui") { ctx.ui.notify("/quote requires fullscreen interactive Pi.", "error"); return; }
