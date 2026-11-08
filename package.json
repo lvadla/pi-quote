@@ -29,6 +29,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test test/*.test.mjs",
+    "test:session": "node test/session.mjs",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {

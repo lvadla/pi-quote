@@ -11,3 +11,9 @@ Requires Pi's fullscreen interface. Tested with Pi 1.5.0, without requiring that
 `selection.ts` uses `marked` to identify Markdown units and `diff` to align rendered characters with source offsets. This is a heuristic, not a source map supplied by Pi. Repeated text, removed markup, and display-only transformations can produce incorrect mappings.
 
 `rendering.ts` applies highlighting to rendered lines and formats original source as a quote.
+
+## Local session tests
+
+Run `npm run test:session -- /path/to/session.jsonl` to check completed assistant messages at three widths using the same component harness as the synthetic tests. It checks navigation, highlighting, unchanged display text, quotes, and cleanup. It does not replay live events or prove every word's highlight position; quote expectations use the selection model.
+
+Keep the log outside the repository. The runner reads it into memory and reports only counts and failure coordinates/categories, without writing fixtures or snapshots. Normal tests do not require a local log.
