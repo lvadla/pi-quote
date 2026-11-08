@@ -1,9 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { isKeyRelease, matchesKey, TuiAltScreen, truncateToWidth, visibleWidth, wrapTextWithAnsi,
-  type Component, type TUI } from "@earendil-works/pi-tui";
-import { indexUnitRows, renderedCells, SmartSelection, verticalUnit, type Cell, type Range, type UnitRows } from "./selection.ts";
+  stripTerminalSequences, type Component, type TUI } from "@earendil-works/pi-tui";
+import { indexUnitRows, SmartSelection, verticalUnit, type Cell, type Range, type UnitRows } from "./selection.ts";
 
 import { highlightLine, quoteText } from "./rendering.ts";
+import { markdownLayout } from "./markdown.ts";
 export { highlightLine, quoteText } from "./rendering.ts";
 
 // Pi 1.5 adapter: these agent message metadata fields are internal. No session data,
@@ -219,11 +220,12 @@ export default function quoteExtension(pi: ExtensionAPI) {
           const owned = Object.getOwnPropertyDescriptor(block.component, "render");
           let painted: { layout: Layout; range: Range; anchor: number; mode: string; lines: string[] } | undefined;
           const wrapper = function(this: Node, width: number) {
-            const lines = original.call(this, width);
+            let lines = original.call(this, width);
             let layout = layouts.get(block);
             if (!layout || layout.width !== width || layout.lines !== lines) {
-              layout = { width, lines, cells: renderedCells(block.source, lines) };
+              layout = { width, ...markdownLayout(this, block.source, width, () => original.call(this, width)) };
               layouts.set(block, layout);
+              lines = layout.lines;
             }
             const range = selection.current;
             if (painted?.layout === layout && painted.range === range && painted.anchor === selection.anchor && painted.mode === mode)
@@ -279,6 +281,14 @@ export default function quoteExtension(pi: ExtensionAPI) {
         const target = verticalUnit(spatial.rows, selection.current, anchor.row, goalColumn, direction);
         if (target) changeSelection(() => selection.selectUnit(target.unit, target.cell.start));
       }
+      function canHighlight(range: Range) {
+        return targets[index].blocks.some(block => {
+          const layout = layouts.get(block)!;
+          if (range.start <= block.start && range.end >= block.end)
+            return layout.lines.some(line => stripTerminalSequences(line).trim());
+          return layout.cells.some(cell => cell.start + block.start >= range.start && cell.end + block.start <= range.end);
+        });
+      }
       function changeSelection(change: () => void) {
         ensureLayouts();
         const before: Range = selection.current;
@@ -286,8 +296,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
         change();
         if (selection.current === before && selection.anchor === anchorBefore) return;
         // Do not silently select invisible markup (e.g. a hidden link URL).
-        if (!targets[index].blocks.some(block => layouts.get(block)!.cells.some(cell =>
-          cell.start + block.start >= selection.current.start && cell.end + block.start <= selection.current.end))) {
+        if (!canHighlight(selection.current)) {
           selection.current = before;
           selection.anchor = anchorBefore;
           ctx.ui.notify("That range has no selectable rendered text.", "info");
@@ -316,7 +325,8 @@ export default function quoteExtension(pi: ExtensionAPI) {
             if (mode === "message") {
               mode = "text";
               const firstBlock = selection.ranges.find(range => range.kind === "block");
-              if (firstBlock) {
+              ensureLayouts();
+              if (firstBlock && canHighlight(firstBlock)) {
                 selection.current = firstBlock;
                 selection.anchor = selection.ranges.find(range => range.kind === "word"
                   && range.start >= firstBlock.start && range.end <= firstBlock.end)?.start ?? firstBlock.start;

@@ -11,6 +11,7 @@
   "files": [
     "index.ts",
     "rendering.ts",
+    "markdown.ts",
     "selection.ts"
   ]
 }

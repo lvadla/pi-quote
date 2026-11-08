@@ -18,6 +18,7 @@
   "files": [
     "index.ts",
     "rendering.ts",
+    "markdown.ts",
     "selection.ts",
     "README.md",
     "docs/usage.md",

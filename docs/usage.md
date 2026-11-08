@@ -32,6 +32,6 @@ Enter inserts the selected Markdown as a blockquote, with the cursor below it. W
 ## Availability and limitations
 
 - You can quote completed messages while the agent works. New messages become selectable automatically once completed.
-- Thinking and tool results are not selectable. Tables can only be selected as whole blocks.
+- Thinking and tool results are not selectable. Tables can only be selected as whole blocks. If a block's text mapping fails, you can still select the whole block and move to other blocks.
 - Successful compaction closes selection when Pi rebuilds the transcript.
 - Partial quotes can contain incomplete Markdown syntax. Matching rendered text to source is heuristic; transformed content such as rendered math may map incorrectly. Check the inserted quote before sending.

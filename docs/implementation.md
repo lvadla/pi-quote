@@ -8,7 +8,9 @@ Requires Pi's fullscreen interface. Tested with Pi 1.5.0, without requiring that
 
 ## Source mapping
 
-`selection.ts` uses `marked` to identify Markdown units and `diff` to align rendered characters with source offsets. This is a heuristic, not a source map supplied by Pi. Repeated text, removed markup, and display-only transformations can produce incorrect mappings.
+`markdown.ts` uses Pi's internal tokens, block cache, and block renderer to associate top-level blocks with source ranges and screen rows. Source offsets account for normalized whitespace and omitted link definitions. Reconstructed rows must match Pi's output exactly; source-changing transformers are not mapped.
+
+`selection.ts` uses `marked` to identify selection units and `diff` to map characters within each block. Top-level tables bypass matching. A block without a character mapping remains selectable as a whole. Character matching is still heuristic, especially for repeated text and display-only transformations.
 
 `rendering.ts` applies highlighting to rendered lines and formats original source as a quote.
 

@@ -44,10 +44,12 @@ export function align(source: string, displayed: string): Map<number, number> {
   return result;
 }
 
-export function renderedCells(source: string, lines: string[]): Cell[] {
+export function renderedCells(source: string, lines: string[], atomic = false): Cell[] {
   const plain = lines.map(stripTerminalSequences);
-  const text = plain.join("\n");
-  const mapping = align(source, text);
+  const mapping = atomic ? new Map<number, number>() : align(source, plain.join("\n"));
+  // Tables bypass the diff. A failed diff also retains whole-block selection,
+  // without manufacturing word positions or blocking navigation past it.
+  const whole = { start: source.length - source.trimStart().length, end: source.trimEnd().length };
   const cells: Cell[] = [];
   let offset = 0;
   plain.forEach((line, row) => {
@@ -55,7 +57,8 @@ export function renderedCells(source: string, lines: string[]): Cell[] {
     for (const { segment, index } of segments.segment(line)) {
       const width = visibleWidth(segment);
       const start = mapping.get(offset + index);
-      if (start !== undefined) cells.push({ start, end: start + segment.length, row, column, width });
+      if (!mapping.size && !/^\s+$/u.test(segment)) cells.push({ ...whole, row, column, width });
+      else if (start !== undefined) cells.push({ start, end: start + segment.length, row, column, width });
       column += width;
     }
     offset += line.length + 1;
