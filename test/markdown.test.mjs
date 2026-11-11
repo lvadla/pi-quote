@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createJiti } from "jiti";
-import { stripTerminalSequences } from "@earendil-works/pi-tui";
+import { hyperlink, stripTerminalSequences } from "@earendil-works/pi-tui";
 import { createHarness } from "./helpers.mjs";
 import { checkMessage } from "./session.mjs";
 const { markdownLayout } = await createJiti(import.meta.url).import("../markdown.ts");
@@ -15,6 +15,20 @@ function setup(t, source, width = 72) {
   const layout = () => markdownLayout(md, source, h.terminal.columns - 1, () => md.render(h.terminal.columns - 1));
   return { h, md, layout };
 }
+
+test("Clickable path decorations preserve block and word selection and original quotes", async t => {
+  const source = "Open `report.md`.\n\nOpen `report.md` again.";
+  const { h, layout } = setup(t, source);
+  const link = hyperlink("report.md", "file:///example/report.md");
+  h.latest.markdownTransformers.push(text => text.split("\n").map(line =>
+    line.includes("`report.md`") ? line.replace("`report.md`", "`" + link + "`") + "\u00a0" : line).join("\n"));
+  h.latest.invalidate();
+  const { lines, cells } = layout();
+  assert.ok(lines.some(line => line.includes("file:///example/report.md")));
+  for (const start of [source.indexOf("report.md"), source.lastIndexOf("report.md")])
+    assert.ok(cells.some(cell => cell.start === start));
+  assert.equal(await checkMessage(h, h.message(source)), 2);
+});
 
 test("Large tables have direct source ranges; surrounding paragraphs remain selectable", async t => {
   const table = ["| Item | Description | Value |", "|---|---|---|",

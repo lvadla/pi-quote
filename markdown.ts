@@ -1,4 +1,4 @@
-import type { Component } from "@earendil-works/pi-tui";
+import { stripTerminalSequences, type Component } from "@earendil-works/pi-tui";
 import { Lexer, Tokenizer, type Token, type TokensList } from "marked";
 import { renderedCells, type Cell } from "./selection.ts";
 
@@ -15,17 +15,30 @@ type Markdown = Component & {
 const definitions = new Tokenizer();
 new Lexer({ tokenizer: definitions }); // Initialize Marked's definition grammar.
 
-function sourceSpans(source: string, tokens: TokensList) {
-  let text = "";
+// Terminal decoration and whitespace may be added by Markdown transformers.
+// Require every other source character to agree in order; this is not a diff.
+function originalOffsets(source: string, displayed: string) {
   const offsets: number[] = [];
-  // Pi expands tabs; Marked normalizes newlines. Keep original UTF-16 offsets.
-  for (let i = 0; i < source.length; i++) {
-    const value = source[i] === "\t" ? "   " : source[i] === "\r" ? "\n" : source[i];
-    text += value;
-    for (let j = 0; j < value.length; j++) offsets.push(i);
-    if (source[i] === "\r" && source[i + 1] === "\n") i++;
+  const whitespace = (text: string, i: number) => i < text.length && /\s/u.test(text[i]);
+  let i = 0, j = 0;
+  while (j < displayed.length) {
+    if (whitespace(displayed, j)) {
+      const start = i;
+      while (whitespace(source, i)) i++;
+      do { offsets[j++] = start; } while (whitespace(displayed, j));
+    } else {
+      while (whitespace(source, i)) i++;
+      if (source[i] !== displayed[j]) return;
+      offsets[j++] = i++;
+    }
   }
+  while (whitespace(source, i)) i++;
+  if (i !== source.length) return;
   offsets.push(source.length);
+  return offsets;
+}
+
+function sourceSpans(text: string, tokens: TokensList) {
   let cursor = 0;
   const definition = () => {
     if (cursor && text[cursor - 1] !== "\n") return;
@@ -45,7 +58,8 @@ function sourceSpans(source: string, tokens: TokensList) {
     return true;
   };
   const spans: { start: number; end: number }[] = [];
-  for (const token of tokens) {
+  for (const decorated of tokens) {
+    const token = { ...decorated, raw: stripTerminalSequences(decorated.raw) };
     let start = cursor;
     if (token.type === "space") {
       if (!whitespace(token.raw)) return;
@@ -69,7 +83,7 @@ function sourceSpans(source: string, tokens: TokensList) {
       if (!text.startsWith(token.raw, cursor)) return;
       cursor += token.raw.length;
     }
-    spans.push({ start: offsets[start], end: offsets[cursor] });
+    spans.push({ start, end: cursor });
   }
   skipDefinitions();
   return cursor === text.length ? spans : undefined;
@@ -87,8 +101,11 @@ export function markdownLayout(component: Component, source: string, width: numb
     lines = render();
     parsed = md.cachedTokens?.deref();
   }
-  if (!parsed || parsed.source !== source.replace(/\t/g, "   ")) return unavailable();
-  const spans = sourceSpans(source, parsed.tokens);
+  if (!parsed) return unavailable();
+  const plain = stripTerminalSequences(parsed.source).replace(/\r\n|\r/g, "\n");
+  const offsets = originalOffsets(source, plain);
+  if (!offsets) return unavailable();
+  const spans = sourceSpans(plain, parsed.tokens);
   if (!spans) return unavailable();
   const cached = Object.keys(parsed.tokens.links).length ? undefined : md.blocks?.deref();
   const regions: { source: string; start: number; row: number; lines: string[]; table: boolean }[] = [];
@@ -106,7 +123,7 @@ export function markdownLayout(component: Component, source: string, width: numb
     }
     if (block.lines.some((line, j) => line !== lines[row + j])) return unavailable();
     if (!["space", "def"].includes(token.type)) regions.push({
-      source: source.slice(spans[i].start, spans[i].end), start: spans[i].start,
+      source: source.slice(offsets[spans[i].start], offsets[spans[i].end]), start: offsets[spans[i].start],
       row, lines: block.lines, table: token.type === "table",
     });
     row += block.lines.length;
