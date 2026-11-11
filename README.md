@@ -1,11 +1,11 @@
-# pi-quote
+# pi-quote-reply
 
 Quote agent messages or selected Markdown directly from Pi's fullscreen transcript into the editor. Nothing is sent automatically.
 
 ## Install
 
 ```sh
-pi install git:github.com/lvadla/pi-quote
+pi install npm:pi-quote-reply
 ```
 
 Run `/reload` in Pi after installing. Requires fullscreen mode.
