@@ -60,6 +60,10 @@ for (const event of [
     const h = createHarness();
     t.after(() => h.stop());
     const before = h.document.render(71);
+    const markdown = h.latest.markdownSlots.find(slot => slot.kind === "text").markdown;
+    const render = markdown.render;
+    const descriptor = Object.getOwnPropertyDescriptor(markdown, "render");
+    const listeners = h.tui.inputListeners.size;
     await h.commands.get("quote").handler("", h.ctx);
     h.input("\r");
     h.input("\t"); // queue a selection frame
@@ -67,6 +71,9 @@ for (const event of [
     await new Promise((resolve) => setTimeout(resolve, 30));
     assert.equal(h.input, undefined);
     assert.equal(h.widgets.children.length, 0);
+    assert.equal(h.tui.inputListeners.size, listeners);
+    assert.equal(markdown.render, render);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(markdown, "render"), descriptor);
     assert.deepEqual(h.document.render(71), before);
   });
 }
