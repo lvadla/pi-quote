@@ -10,6 +10,7 @@
   },
   "files": [
     "index.ts",
+    "transcript.ts",
     "rendering.ts",
     "markdown.ts",
     "selection.ts"

@@ -4,7 +4,7 @@ Requires Pi's fullscreen interface. Tested with Pi 1.5.0, without requiring that
 
 ## Transcript integration
 
-`index.ts` integrates with Pi's public scrolling and input APIs and its internal assistant components. It reads `lastMessage`, `isStreaming`, and `markdownSlots`, assumes the document is the first TUI child, and temporarily wraps selected Markdown components' render methods. Changes to Pi's internal structure may require adapter updates.
+`index.ts` handles interaction through Pi's public scrolling and input APIs and temporarily wraps selected Markdown components' render methods. `transcript.ts` locates messages and measures their positions: it reads `lastMessage`, `isStreaming`, and `markdownSlots` and assumes the document is the first TUI child. It exposes message text, source ranges, and ordinary component references without private field types. Changes to Pi's internal structure may require adapter updates.
 
 ## Source mapping
 

@@ -5,56 +5,10 @@ import { indexUnitRows, SmartSelection, verticalUnit, type Cell, type Range, typ
 
 import { highlightLine, quoteText } from "./rendering.ts";
 import { markdownLayout } from "./markdown.ts";
+import { agentMessageTargets, rowOf, transcriptDocument, type Block, type Target } from "./transcript.ts";
 export { highlightLine, quoteText } from "./rendering.ts";
 
-// Pi 1.5 adapter: these agent message metadata fields are internal. No session data,
-// transcript nodes, or mouse-selection state are replaced or modified.
-type Node = Component & { children?: Node[]; lastMessage?: any; isStreaming?: boolean;
-  markdownSlots?: { kind: string; markdown: Node }[] };
-type Block = { component: Node; source: string; start: number; end: number };
-type Target = { component: Node; text: string; blocks: Block[] };
 type Layout = { width: number; lines: string[]; cells: Cell[] };
-
-export function agentMessageTargets(root: Node): Target[] {
-  const result: Target[] = [];
-  function visit(node: Node) {
-    const message = node.lastMessage;
-    if (message?.role === "assistant" && Array.isArray(node.markdownSlots)) {
-      if (node.isStreaming || ["aborted", "error"].includes(message.stopReason)) return;
-      const texts: string[] = message.content.filter((part: any) => part.type === "text" && part.text.trim())
-        .map((part: any) => part.text);
-      const slots = node.markdownSlots.filter(slot => slot.kind === "text");
-      if (!texts.length || slots.length !== texts.length) return;
-      let offset = 0;
-      const blocks = texts.map((text, i) => {
-        const start = offset + text.length - text.trimStart().length;
-        offset += text.length + 2;
-        return { component: slots[i].markdown, source: text.trim(), start, end: start + text.trim().length };
-      });
-      result.push({ component: node, text: texts.join("\n\n"), blocks });
-      return;
-    }
-    node.children?.forEach(visit);
-  }
-  visit(root);
-  return result;
-}
-
-export function rowOf(root: Node, target: Node, width: number): number | undefined {
-  // Find the path before measuring. Rendering every unsuccessful subtree during
-  // the search measures the same history repeatedly at each nesting depth.
-  function preceding(node: Node): Node[] | undefined {
-    if (node === target) return [];
-    const siblings: Node[] = [];
-    for (const child of node.children ?? []) {
-      const nested = preceding(child);
-      if (nested) return [...siblings, ...nested];
-      siblings.push(child);
-    }
-    return undefined;
-  }
-  return preceding(root)?.reduce((row, node) => row + node.render(width).length, 0);
-}
 
 export default function quoteExtension(pi: ExtensionAPI) {
   let close: (() => void) | undefined;
@@ -128,13 +82,14 @@ export default function quoteExtension(pi: ExtensionAPI) {
         return;
       }
       const tui = host;
-      const document = tui.children[0] as Node;
-      targets = document ? agentMessageTargets(document) : [];
-      if (!targets.length) {
+      const root = transcriptDocument(tui);
+      targets = root ? agentMessageTargets(root) : [];
+      if (!root || !targets.length) {
         ctx.ui.setWidget(hintKey, undefined);
         ctx.ui.notify("No completed agent text messages found in this transcript.", "info");
         return;
       }
+      const document = root;
       index = targets.length - 1;
       const originalTop = tui.viewportTop;
       const wasFollowing = tui.isFollowingOutput;
@@ -219,7 +174,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
           const original = block.component.render;
           const owned = Object.getOwnPropertyDescriptor(block.component, "render");
           let painted: { layout: Layout; range: Range; anchor: number; mode: string; lines: string[] } | undefined;
-          const wrapper = function(this: Node, width: number) {
+          const wrapper = function(this: Component, width: number) {
             let lines = original.call(this, width);
             let layout = layouts.get(block);
             if (!layout || layout.width !== width || layout.lines !== lines) {
@@ -249,7 +204,7 @@ export default function quoteExtension(pi: ExtensionAPI) {
           restore.push(() => {
             if (block.component.render !== wrapper) return;
             if (owned) Object.defineProperty(block.component, "render", owned);
-            else delete (block.component as Partial<Node>).render;
+            else delete (block.component as Partial<Component>).render;
           });
         }
         reveal(true);
