@@ -1,6 +1,6 @@
 # pi-quote-reply
 
-Quote agent messages or selected Markdown directly from Pi's fullscreen transcript into the editor. Nothing is sent automatically.
+Quote whole or partial agent messages directly from [Pi](https://pi.dev/)'s fullscreen transcript into the editor. The quote is inserted into the editor draft so you can add your reply before sending.
 
 ## Install
 
@@ -8,9 +8,12 @@ Quote agent messages or selected Markdown directly from Pi's fullscreen transcri
 pi install npm:pi-quote-reply
 ```
 
-Run `/reload` in Pi after installing. Requires fullscreen mode.
+Run `/reload` in Pi after installing.
 
 ## Usage
+
+> [!NOTE]
+> Requires fullscreen mode.
 
 Run `/quote`, choose a message with the arrow keys or `h/j/k/l`, and press Enter. Use Tab to shrink the selection, Shift+Tab to expand it, and Enter to insert the quote. Escape goes back or cancels.
 
